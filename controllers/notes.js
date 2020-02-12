@@ -27,49 +27,48 @@ exports.readNote = (req, res) => {
     })
 }
 
-//post note through user id and lesson id
+
 exports.postNote = (req, res) => {
-    if (req.body._id != "") {
-        Notes.findOne({ _id: req.body._id })
-        .then(function (dbNote) {
-            if (req.body.title === "") {
-                req.body.title = dbNote.title
-            }
-            if (req.body.category === "") {
-                req.body.category = dbNote.category
-            }
-            if (req.body.body === "") {
-                req.body.body = dbNote.body
-            }
-            return Notes.findOneAndUpdate({ _id: req.body._id }, req.body, { new: true });
+    if (req.body._id === "") {
+        Notes.create({
+            User_id: req.body.User_id,
+            Lesson_id: req.params.id,
+            category: req.body.category,
+            title: req.body.title,
+            body: req.body.body
         })
-        .then(function (Notessmade) {
-            res.json(Notessmade);
-        })
-        .catch(function (err) {
-            console.log(err)
-            res.json({ error: "There was an error in updating note." });
-        });
+            .then(function (dbNotes) {
+                return User.findOneAndUpdate({ _id: req.body.User_id },
+                    { $push: { notes: dbNotes._id } }, { new: true });
+            }).then(function (newusernotes) {
+                res.json(newusernotes)
+            }).catch(function () {
+                res.status(422).json({ error: 'Could not post bookmark.' })
+            })
 } else {
-Notes.create({
-        User_id: req.body.User_id,
-        Lesson_id: req.params.id,
-        category: req.body.category,
-        title: req.body.title,
-        body: req.body.body
+    Notes.findOne({ _id: req.body._id })
+    .then(function (dbNote) {
+        if (req.body.title === "") {
+            req.body.title = dbNote.title
+        }
+        if (req.body.category === "") {
+            req.body.category = dbNote.category
+        }
+        if (req.body.body === "") {
+            req.body.body = dbNote.body
+        }
+        return Notes.findOneAndUpdate({ _id: req.body._id }, req.body, { new: true });
     })
-        .then(function (dbNotes) {
-            return User.findOneAndUpdate({ _id: req.body.User_id },
-                { $push: { notes: dbNotes._id } }, { new: true });
-        }).then(function (newusernotes) {
-            res.json(newusernotes)
-        }).catch(function () {
-            res.status(422).json({ error: 'Could not post bookmark.' })
-        })
+    .then(function (Notessmade) {
+        res.json(Notessmade);
+    })
+    .catch(function (err) {
+        console.log(err)
+        res.json({ error: "There was an error in updating note." });
+    });
     }
     
 }
-
 
 //update note by id
 exports.updateNote = (req, res) => {
